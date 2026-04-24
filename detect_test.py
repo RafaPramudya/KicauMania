@@ -2,6 +2,7 @@ from typing import Union, Tuple
 import math
 
 import cv2
+import cv2.typing as cvt
 import mediapipe as mp
 import numpy as np
 import time
@@ -14,18 +15,27 @@ HandLandmarkerResult = mp.tasks.vision.HandLandmarkerResult
 HandLandmarksConnections = mp.tasks.vision.HandLandmarksConnections
 FaceDetector = mp.tasks.vision.FaceDetector
 FaceDetectorOptions = mp.tasks.vision.FaceDetectorOptions
+FaceLandmarker = mp.tasks.vision.FaceLandmarker
+FaceLandmarkerOptions = mp.tasks.vision.FaceLandmarkerOptions
+FaceLandmarkerConnections = mp.tasks.vision.FaceLandmarksConnections
 VisionRunningMode = mp.tasks.vision.RunningMode
 drawing_utils = mp.tasks.vision.drawing_utils
+drawing_styles = mp.tasks.vision.drawing_styles
 
 # Model Options
 hand_model_options = HandLandmarkerOptions(
     base_options = BaseOptions(model_asset_path="hand_landmarker.task"),
-    num_hands = 2,
-    running_mode = VisionRunningMode.VIDEO   
+    running_mode = VisionRunningMode.VIDEO   ,
+    num_hands = 1
 )
-face_model_options = FaceDetectorOptions(
+face_D_model_options = FaceDetectorOptions(
     base_options = BaseOptions(model_asset_path="blazeface_short.tflite"),
     running_mode = VisionRunningMode.VIDEO
+)
+face_L_model_options = FaceLandmarkerOptions(
+    base_options = BaseOptions(model_asset_path="face_landmarker.task"),
+    running_mode = VisionRunningMode.VIDEO,
+    num_faces = 1
 )
 
 # Utils function
@@ -38,8 +48,15 @@ def _norm2pixel_(normalized_x: float, normalized_y: float, image_width: int, ima
     y = min(math.floor(normalized_y * image_height), image_height - 1)
     return x, y
 
-# def visualize_hand_detection() deprecated, using drawing_utils from MediaPipe
-def visualize_face_detection(image, detection_result) -> np.ndarray:
+def visualize_hand_detection(image: cvt.MatLike, detection_result) -> np.ndarray:
+    annotated_image = image.copy()
+    for i in range(len(detection_result.hand_landmarks)):
+        hand_landmark = detection_result.hand_landmarks[i]
+        drawing_utils.draw_landmarks(annotated_image, hand_landmark, HandLandmarksConnections.HAND_CONNECTIONS)
+
+    return annotated_image
+
+def visualize_face_detection(image: cvt.MatLike, detection_result) -> np.ndarray:
     annotated_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     height, width, _ = image.shape
 
@@ -64,13 +81,45 @@ def visualize_face_detection(image, detection_result) -> np.ndarray:
     
     return cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR)
 
+def visualize_face_landmarker(image: cvt.MatLike, detection_result) -> np.ndarray:
+    annotated_image = image.copy()
+    for i in range(len(detection_result.face_landmarks)):
+        face_landmarks = detection_result.face_landmarks[i]
+
+        drawing_utils.draw_landmarks(
+            annotated_image,
+            face_landmarks,
+            FaceLandmarkerConnections.FACE_LANDMARKS_TESSELATION,
+            None, 
+            drawing_styles.get_default_face_mesh_tesselation_style()
+        )
+        drawing_utils.draw_landmarks(
+            annotated_image,
+            face_landmarks,
+            FaceLandmarkerConnections.FACE_LANDMARKS_LEFT_IRIS,
+            None,
+            drawing_styles.get_default_face_mesh_iris_connections_style()
+        )
+        drawing_utils.draw_landmarks(
+            annotated_image,
+            face_landmarks,
+            FaceLandmarkerConnections.FACE_LANDMARKS_RIGHT_IRIS,
+            None,
+            drawing_styles.get_default_face_mesh_iris_connections_style()
+        )
+
+    return annotated_image
+
 # CV2 Initialization
 cap = cv2.VideoCapture(0)
 start_time = time.time()
 last_time = start_time
 
 # Main Function
-with HandLandmarker.create_from_options(hand_model_options) as hand_model, FaceDetector.create_from_options(face_model_options) as face_model:
+with    HandLandmarker.create_from_options(hand_model_options) as hand_model,\
+        FaceDetector.create_from_options(face_D_model_options) as face_D_model,\
+        FaceLandmarker.create_from_options(face_L_model_options) as face_L_model\
+    :
     while True:
         ret, frame = cap.read()
         if not ret: break
@@ -84,15 +133,16 @@ with HandLandmarker.create_from_options(hand_model_options) as hand_model, FaceD
         timestamp_ms = int((current_time - start_time) * 1000)
 
         hand_result = hand_model.detect_for_video(image, timestamp_ms)
-        face_result = face_model.detect_for_video(image, timestamp_ms)
+        face_D_result = face_D_model.detect_for_video(image, timestamp_ms)
+        face_L_result = face_L_model.detect_for_video(image, timestamp_ms)
 
         # print(hand_result)
-        # print(face_result)
-        for i in range(len(hand_result.hand_landmarks)):
-            hand_landmark = hand_result.hand_landmarks[i]
-            drawing_utils.draw_landmarks(frame, hand_landmark, HandLandmarksConnections.HAND_CONNECTIONS)
+        # print(face_D_result)
+        # print(face_L_result)
 
-        frame = visualize_face_detection(frame, face_result)
+        frame = visualize_hand_detection(frame, hand_result)
+        frame = visualize_face_detection(frame, face_D_result)
+        frame = visualize_face_landmarker(frame, face_L_result)
 
         cv2.imshow("Test", frame)
         

@@ -56,7 +56,7 @@ def visualize_face_detection(image: cvt.MatLike, detection_result) -> np.ndarray
         start_point = (bbox.origin_x, bbox.origin_y)
         end_point   = (bbox.origin_x + bbox.width, bbox.origin_y + bbox.height)
 
-        cv2.rectangle(annotated_image, start_point, end_point, (255, 0, 0), 3)
+        # cv2.rectangle(annotated_image, start_point, end_point, (0, 255, 0), 3)
 
         for keypoint in detection.keypoints:
             keypoint_px = _norm2pixel_(keypoint.x, keypoint.y, width, height)

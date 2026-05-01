@@ -1,0 +1,22 @@
+face_detection_type: Detection
+features:
+- hand_face_distance
+hidden_layer:
+- relu: 64
+- dropout: 0.2
+- relu: 64
+- dropout: 0.2
+- relu: 64
+labels:
+- KICAUUU
+- kicau_luar
+- Hi
+- Peace
+- F-you
+- Metal
+min_face: 1
+min_hand: 1
+name: kicau_mania
+normalization: nose_base
+path: kicau_mania.keras
+training_data: kicau_mania.trdata.csv

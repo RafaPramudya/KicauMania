@@ -18,6 +18,11 @@ from utils import (
     normalize_with_base
 )
 
+# Model Path
+HAND_LANDMARKER_MODEL_PATH = "model/hand_landmarker.task"
+FACE_LANDMARKER_MODEL_PATH = "model/face_landmarker.task"
+FACE_DETECTOR_MODEL_PATH   = "model/blazeface_short.tflite"
+
 # CLI argument parsing
 parser = argparse.ArgumentParser()
 parser.add_argument('--yml', required=True)
@@ -66,18 +71,18 @@ drawing_styles = mp.tasks.vision.drawing_styles
 
 # Model Options
 hand_model_options = HandLandmarkerOptions(
-    base_options = BaseOptions(model_asset_path="hand_landmarker.task"),
+    base_options = BaseOptions(model_asset_path=HAND_LANDMARKER_MODEL_PATH),
     running_mode = VisionRunningMode.VIDEO,
     num_hands = min(1, min_hand_req)
 ) if use_hand_detector else None
 
 face_D_model_options = FaceDetectorOptions(
-    base_options = BaseOptions(model_asset_path="blazeface_short.tflite"),
+    base_options = BaseOptions(model_asset_path=FACE_DETECTOR_MODEL_PATH),
     running_mode = VisionRunningMode.VIDEO
 ) if use_face_detector else None
 
 face_L_model_options = FaceLandmarkerOptions(
-    base_options = BaseOptions(model_asset_path="face_landmarker.task"),
+    base_options = BaseOptions(model_asset_path=FACE_LANDMARKER_MODEL_PATH),
     running_mode = VisionRunningMode.VIDEO,
     num_faces = min(1, min_face_req)
 ) if use_face_landmarker else None

@@ -7,6 +7,11 @@ import mediapipe as mp
 import numpy as np
 import time
 
+# Model Path
+HAND_LANDMARKER_MODEL_PATH = "model/hand_landmarker.task"
+FACE_LANDMARKER_MODEL_PATH = "model/face_landmarker.task"
+FACE_DETECTOR_MODEL_PATH   = "model/blazeface_short.tflite"
+
 # Mediapipe Library Import
 BaseOptions = mp.tasks.BaseOptions
 HandLandmarker = mp.tasks.vision.HandLandmarker
@@ -24,16 +29,16 @@ drawing_styles = mp.tasks.vision.drawing_styles
 
 # Model Options
 hand_model_options = HandLandmarkerOptions(
-    base_options = BaseOptions(model_asset_path="hand_landmarker.task"),
+    base_options = BaseOptions(model_asset_path=HAND_LANDMARKER_MODEL_PATH),
     running_mode = VisionRunningMode.VIDEO   ,
     num_hands = 1
 )
 face_D_model_options = FaceDetectorOptions(
-    base_options = BaseOptions(model_asset_path="blazeface_short.tflite"),
+    base_options = BaseOptions(model_asset_path=FACE_DETECTOR_MODEL_PATH),
     running_mode = VisionRunningMode.VIDEO
 )
 face_L_model_options = FaceLandmarkerOptions(
-    base_options = BaseOptions(model_asset_path="face_landmarker.task"),
+    base_options = BaseOptions(model_asset_path=FACE_LANDMARKER_MODEL_PATH),
     running_mode = VisionRunningMode.VIDEO,
     num_faces = 1
 )
@@ -133,18 +138,18 @@ with    HandLandmarker.create_from_options(hand_model_options) as hand_model,\
         timestamp_ms = int((current_time - start_time) * 1000)
 
         hand_result = hand_model.detect_for_video(image, timestamp_ms)
-        face_D_result = face_D_model.detect_for_video(image, timestamp_ms)
+        # face_D_result = face_D_model.detect_for_video(image, timestamp_ms)
         face_L_result = face_L_model.detect_for_video(image, timestamp_ms)
 
         # print(hand_result)
         # print(face_D_result)
-        # print(face_L_result)
+        print(face_L_result)
 
         frame = visualize_hand_detection(frame, hand_result)
-        frame = visualize_face_detection(frame, face_D_result)
+        # frame = visualize_face_detection(frame, face_D_result)
         frame = visualize_face_landmarker(frame, face_L_result)
 
-        cv2.imshow("Test", frame)
+        cv2.imshow("Kicau Mania", frame)
         
         key = cv2.waitKey(5)
 
